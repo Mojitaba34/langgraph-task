@@ -9,11 +9,7 @@ from src.agent.graph import (
     recommendation_chat_bot,
     wrapper_agent,
 )
-# Ensure your module path is correct
 from src.agent.models import PreviousDayData, InputSalesData, OutputData
-
-
-# --- Fixtures & Helpers ----------------------------------------------------
 
 
 @pytest.fixture(autouse=True)
@@ -50,9 +46,6 @@ def sample_output_data():
     )
 
 
-# --- input_handler tests --------------------------------------------------
-
-
 def test_input_handler_valid(sample_input_data):
     state = {"input_data": sample_input_data}
     out = input_handler(state)
@@ -70,9 +63,6 @@ def test_input_handler_invalid_missing_sales():
     state = {"input_data": {"date": "2025-06-30"}}
     with pytest.raises(ValidationError):
         input_handler(state)
-
-
-# --- calculate_node tests -------------------------------------------------
 
 
 def test_calculate_node_invokes_llm(monkeypatch, sample_input_data, sample_output_data):
@@ -99,9 +89,6 @@ def test_calculate_node_invokes_llm(monkeypatch, sample_input_data, sample_outpu
     assert out["processed_data"] == sample_output_data
 
 
-# --- recommendation_chat_bot tests ----------------------------------------
-
-
 def test_recommendation_chat_bot_invokes_llm(monkeypatch, sample_output_data):
     state = {"processed_data": sample_output_data}
 
@@ -119,9 +106,6 @@ def test_recommendation_chat_bot_invokes_llm(monkeypatch, sample_output_data):
     out = recommendation_chat_bot(state)
     assert "recommendation" in out
     assert out["recommendation"].content.startswith("Optimize CAC")
-
-
-# --- wrapper_agent integration test ---------------------------------------
 
 
 def test_wrapper_agent_full_flow(monkeypatch, sample_input_data, sample_output_data):
