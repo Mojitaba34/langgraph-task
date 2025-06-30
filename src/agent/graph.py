@@ -5,16 +5,14 @@ Returns a predefined response. Replace logic and configuration as needed.
 
 from __future__ import annotations
 
-import json
 import os
-import pprint
-from typing import TypedDict, Annotated, Optional
+from typing import TypedDict, Optional
 
 from dotenv import load_dotenv
 from langchain_core.messages import SystemMessage, HumanMessage
 from langchain_google_genai import ChatGoogleGenerativeAI
+from langgraph.func import entrypoint
 from langgraph.graph import StateGraph
-from langgraph.graph.message import add_messages
 from pydantic import ValidationError
 
 from src.agent.models import InputSalesData, OutputData
@@ -33,7 +31,6 @@ gemini = ChatGoogleGenerativeAI(
 
 
 class State(TypedDict):
-    response: Annotated[list, add_messages]
     input_data: dict
     validated_data: Optional[InputSalesData] = None
     processed_data: Optional[OutputData] = None
@@ -86,28 +83,11 @@ state_graph.add_edge("calculate_node", "__end__")
 
 graph = state_graph.compile()
 
-print("Please paste the input in this JSON format:\n")
-print(
-    """{
-    "date": "2025-06-30",
-    "sales": 150000,
-    "costs": 10000,
-    "customers_acquired": 60,
-    "previous_day": {
-        "sales": 12000,
-        "costs": 8000,
-        "customers_acquired": 35
+
+@entrypoint()
+def wrapper_agent(input_data: InputSalesData) -> dict:
+    result = graph.invoke({"input_data": input_data})
+    return {
+        "processed_data": result["processed_data"],
+        "recommendation": result["recommendation"].content,
     }
-}"""
-)
-
-user_input_raw = input("\nPaste JSON input here:\n")
-try:
-    user_input = json.loads(user_input_raw)
-except json.JSONDecodeError as e:
-    print(f"\nInvalid JSON input: {e}")
-
-result = graph.invoke({"input_data": user_input})
-processed_data: OutputData = result["processed_data"]
-print(pprint.pprint(processed_data.model_dump()))
-print(result["recommendation"].content)
